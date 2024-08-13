@@ -613,6 +613,10 @@ class DPOTrainer(Trainer):
         chosen = feature["chosen"]
         rejected = feature["rejected"]
 
+        if not self.tokenizer.bos_token_id:
+            self.tokenizer.bos_token_id = self.tokenizer.eos_token_id
+            self.tokenizer.add_special_tokens({"bos_token": self.tokenizer.eos_token})
+
         if not self.is_encoder_decoder:
             # Check issues below for more details
             #  1. https://github.com/huggingface/trl/issues/907
@@ -664,9 +668,13 @@ class DPOTrainer(Trainer):
             chosen_tokens["prompt_attention_mask"] = [1] + chosen_tokens["prompt_attention_mask"]
             rejected_tokens["prompt_attention_mask"] = [1] + rejected_tokens["prompt_attention_mask"]
 
+            # print(chosen_tokens["input_ids"])
+            # print(chosen_tokens["attention_mask"])
             # add EOS token to end of answer
             chosen_tokens["input_ids"].append(self.tokenizer.eos_token_id)
+            # print(chosen_tokens["input_ids"])
             chosen_tokens["attention_mask"].append(1)
+            # print(chosen_tokens["attention_mask"])
 
             rejected_tokens["input_ids"].append(self.tokenizer.eos_token_id)
             rejected_tokens["attention_mask"].append(1)
@@ -716,6 +724,9 @@ class DPOTrainer(Trainer):
                     if type_key == "token_type_ids":
                         continue
                     batch[f"{k}{type_key}"] = tokens
+                    # print(f"{k}{type_key}", tokens)
+                    # import pdb; pdb.set_trace()
+                    # raise
 
         else:
             chosen_tokens = self.tokenizer(
